@@ -41,10 +41,23 @@ class SignerTest < Test::Unit::TestCase
 end
 
 class CipherTest < Test::Unit::TestCase
-  def test_key_hex_encoding
-    cipher  = OpenSSL::Cipher::Cipher.new("aes-256-cbc")
-    key     = cipher.random_key
-    key_hex = key.unpack("H*")[0]
-    assert_equal key, [key_hex].pack("H*")
+  def test_cipher_deciper
+    # generate hex encoded key
+    cipher = OpenSSL::Cipher::Cipher.new("aes-256-cbc")
+    key = cipher.random_key.unpack("H*")[0]
+    assert key =~ /[0-9a-f]+/
+
+    # encrypt data with key
+    cipher.encrypt
+    cipher.key = [key].pack("H*")
+    cipher = cipher.update("foo") + cipher.final
+    data = cipher.unpack("H*")[0]
+
+    # decrypt data with key
+    decipher  = OpenSSL::Cipher::Cipher.new("aes-256-cbc")
+    decipher.key = [key].pack("H*")
+    decipher = decipher.update([data].pack("H*")) + decipher.final
+
+    assert_equal "foo", decipher
   end
 end
